@@ -153,6 +153,15 @@
 
   .scroller{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 22px 28px;scrollbar-width:none;max-width:var(--wrap);margin:0 auto}
   .scroller::-webkit-scrollbar{display:none}
+  .svc-head{align-items:center}
+  .svc-nav{display:flex;gap:10px}
+  .svc-arrow{width:38px;height:38px;border-radius:50%;border:0;background:var(--gray-2);color:var(--ink);font-size:20px;line-height:38px;cursor:pointer;transition:background .2s,opacity .2s;font-family:inherit}
+  .svc-arrow:hover{background:var(--line)}
+  .svc-arrow[disabled]{opacity:.35;cursor:default}
+  .scroller{cursor:grab}
+  .scroller.dragging{cursor:grabbing;scroll-snap-type:none}
+  .scroller.dragging .svc{pointer-events:none}
+  @media (hover:none){.svc-nav{display:none}}
   .svc{flex:0 0 min(78vw,300px);scroll-snap-align:start;background:var(--white);border-radius:18px;padding:30px 28px;min-height:360px;display:flex;flex-direction:column;box-shadow:2px 4px 12px rgba(0,0,0,.06)}
   .svc .ico{width:44px;height:44px;margin-bottom:auto}
   .svc .ico svg{width:34px;height:34px;stroke:var(--blue);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -368,7 +377,9 @@
 </section>
 
 <section class="section alt" id="services">
-  <div class="wrap"><div class="section-head"><h2 class="h2">What we do.</h2></div></div>
+  <div class="wrap"><div class="section-head svc-head"><h2 class="h2">What we do.</h2>
+    <div class="svc-nav"><button type="button" class="svc-arrow" id="svcPrev" aria-label="Previous services">&lsaquo;</button><button type="button" class="svc-arrow" id="svcNext" aria-label="Next services">&rsaquo;</button></div>
+  </div></div>
   <div class="scroller" tabindex="0" aria-label="Services, scroll sideways">
     <div class="svc"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M8 21h8"/></svg></div><h3>Website design and build</h3><p>Fast, mobile-friendly sites on WordPress or custom code.</p></div>
     <div class="svc"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg></div><h3>Logos and brand identity</h3><p>Marks, colours and type that hold together everywhere.</p></div>
@@ -464,6 +475,24 @@
       hv.addEventListener('playing',()=>hv.classList.add('on'));
       hv.play().catch(()=>{});}catch(e){}
   }
+  (function(){
+    const sc=document.querySelector('.scroller');if(!sc)return;
+    const prev=document.getElementById('svcPrev'),next=document.getElementById('svcNext');
+    const step=()=>{const c=sc.querySelector('.svc');return c?c.offsetWidth+20:320;};
+    function upd(){if(!prev)return;prev.disabled=sc.scrollLeft<=2;next.disabled=sc.scrollLeft>=sc.scrollWidth-sc.clientWidth-2;}
+    prev&&prev.addEventListener('click',()=>sc.scrollBy({left:-step(),behavior:'smooth'}));
+    next&&next.addEventListener('click',()=>sc.scrollBy({left:step(),behavior:'smooth'}));
+    sc.addEventListener('scroll',upd,{passive:true});window.addEventListener('resize',upd);upd();
+    // vertical wheel scrolls horizontally
+    sc.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){sc.scrollLeft+=e.deltaY;e.preventDefault();}},{passive:false});
+    // click-and-drag
+    let down=false,sx=0,sl=0,moved=0;
+    sc.addEventListener('pointerdown',e=>{if(e.button!==0)return;down=true;moved=0;sx=e.clientX;sl=sc.scrollLeft;sc.setPointerCapture(e.pointerId);});
+    sc.addEventListener('pointermove',e=>{if(!down)return;const d=e.clientX-sx;if(Math.abs(d)>4){sc.classList.add('dragging');moved=1;}sc.scrollLeft=sl-d;});
+    const end=()=>{down=false;sc.classList.remove('dragging');};
+    sc.addEventListener('pointerup',end);sc.addEventListener('pointercancel',end);
+    sc.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=0;}},true);
+  })();
   document.getElementById('yr').textContent=new Date().getFullYear();
 </script>
 </body>
